@@ -65,7 +65,7 @@ jobs:
       - name: Deploy ACL
         if: github.event_name == 'push'
         id: deploy-acl
-        uses: tailscale/gitops-acl-action@v1
+        uses: tailscale/gitops-acl-action@v0.1
         with:
           api-key: ${{ secrets.TS_API_KEY }}
           tailnet: ${{ secrets.TS_TAILNET }}
@@ -74,7 +74,7 @@ jobs:
       - name: Test ACL
         if: github.event_name == 'pull_request'
         id: test-acl
-        uses: tailscale/gitops-acl-action@v1
+        uses: tailscale/gitops-acl-action@v0.1
         with:
           api-key: ${{ secrets.TS_API_KEY }}
           tailnet: ${{ secrets.TS_TAILNET }}
