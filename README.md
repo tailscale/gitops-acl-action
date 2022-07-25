@@ -62,6 +62,13 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Fetch old version info
+        id: fetch-old-version
+        uses: actions/cache@v3
+        with:
+          path: .
+          key: version-cache.json
+
       - name: Deploy ACL
         if: github.event_name == 'push'
         id: deploy-acl
