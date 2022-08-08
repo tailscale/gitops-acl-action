@@ -1,4 +1,4 @@
-name: "SyncTailscale ACLs"
+name: "Sync Tailscale ACLs"
 description: "Push changes to Tailscale and run ACL tests in CI"
 inputs:
   tailnet:
