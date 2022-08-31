@@ -1,9 +1,8 @@
-# GitHub Action for Tailscale ACLs
+# GitHub Action to Sync Tailscale ACLs
 
-This GitHub action lets you manage your [Tailscale ACL
-rules](https://tailscale.com/kb/1018/acls/) using a
+This GitHub action lets you manage your [tailnet policy file](https://tailscale.com/kb/1018/acls/) using a
 [GitOps](https://about.gitlab.com/topics/gitops/) workflow. With this GitHub
-action you can automatically manage your Tailscale ACLs using a git repository
+action you can automatically manage your tailnet policy file using a git repository
 as your source of truth. 
 
 ## Inputs
@@ -37,8 +36,7 @@ out to production.
 
 ## Getting Started
 
-Set up a new GitHub repository that will contain your ACL files. Open [the admin
-panel ACL editor](https://login.tailscale.com/admin/acls) and copy your rules to
+Set up a new GitHub repository that will contain your tailnet policy file. Open the [Access Controls page of the admin console](https://login.tailscale.com/admin/acls) and copy your policy file to
 a file in that repo called `policy.hujson`.
 
 If you want to change this name to something else, you will need to add the
@@ -47,7 +45,7 @@ If you want to change this name to something else, you will need to add the
 Copy this file to `.github/workflows/tailscale.yml`.
 
 ```yaml
-name: Tailscale ACL syncing
+name: Sync Tailscale ACLs
 
 on:
   push:
@@ -102,4 +100,4 @@ Then open the secrets settings for your repo and add two secrets:
   panel](https://login.tailscale.com/admin/machines))
 
 Once you do that, commit the changes and push them to GitHub. You will have CI
-automatically test and push your ACL changes to Tailscale.
+automatically test and push changes to your tailnet policy file to Tailscale.
