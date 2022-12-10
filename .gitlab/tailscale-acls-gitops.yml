@@ -1,0 +1,15 @@
+image:
+  name: rdb91/gitops-pusher:latest
+  entrypoint: [""]
+
+validate tailscale acls:
+  script:
+    - gitops-pusher --policy-file=${TAILSCALE_POLICY_FILE:-policy.hujson} test
+
+push tailscale policy:
+  needs:
+    - validate tailscale acls
+  script:
+    - gitops-pusher --policy-file=${TAILSCALE_POLICY_FILE:-policy.hujson} apply
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
