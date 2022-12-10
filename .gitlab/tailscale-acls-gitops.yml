@@ -6,7 +6,7 @@ validate tailscale acls:
   script:
     - gitops-pusher --policy-file=${TAILSCALE_POLICY_FILE:-policy.hujson} test
 
-push:
+push tailscale policy:
   needs:
     - validate tailscale acls
   script:
