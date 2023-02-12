@@ -102,3 +102,60 @@ Then open the secrets settings for your repo and add two secrets:
 
 Once you do that, commit the changes and push them to GitHub. You will have CI
 automatically test and push changes to your tailnet policy file to Tailscale.
+
+### Using OAuth Clients for Generating API Tokens
+
+[OAuth clients](https://tailscale.com/kb/1019/oauth-clients/) provide the ability
+to generate temporary API tokens that can be used to access the Tailscale API. Because
+all API tokens [expire after 90 days](https://tailscale.com/kb/1215/oauth-clients/#generating-long-lived-auth-keys),
+you would need to rotate your Repository Secret for the API key every 90 days. With an
+OAuth client, whose secret is permanent, you can generate a new API token on the fly
+every time you need to run the action.
+
+For example:
+
+```yaml
+name: Sync Tailscale ACLs
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  acls:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      # https://tailscale.com/kb/1215/oauth-clients/#generating-long-lived-auth-keys
+      # https://www.aaron-powell.com/posts/2022-07-14-working-with-add-mask-and-github-actions/
+      - name: Generate API Token from OAuth App
+        run: |
+          TS_API_TOKEN=$(curl -d "client_id=${{ secrets.TS_OAUTH_CLIENT_ID }}" -d "client_secret=${{ secrets.TS_OAUTH_CLIENT_SECRET }}" \
+            "https://api.tailscale.com/api/v2/oauth/token" | jq -r '.access_token')
+          echo "::add-mask::$TS_API_TOKEN"
+          echo TS_API_TOKEN=$TS_API_TOKEN >> $GITHUB_ENV
+
+      - name: Deploy ACL
+        if: github.event_name == 'push'
+        id: deploy-acl
+        uses: tailscale/gitops-acl-action@v1
+        with:
+          api-key: ${{ env.TS_API_TOKEN }}
+          tailnet: ${{ secrets.TS_TAILNET }}
+          action: apply
+          policy-file: tailscale/policy.hujson
+
+      - name: Test ACL
+        if: github.event_name == 'pull_request'
+        id: test-acl
+        uses: tailscale/gitops-acl-action@v1
+        with:
+          api-key: ${{ env.TS_API_TOKEN}}
+          tailnet: ${{ secrets.TS_TAILNET }}
+          action: test
+          policy-file: tailscale/policy.hujson
+```
