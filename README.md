@@ -108,8 +108,9 @@ automatically test and push changes to your tailnet policy file to Tailscale.
 This is a `docker` GitHub action, meaning that when it is invoked, a container image
 will be built and then run.
 
-In the scenario where you are using self-hosted runners and are being rate-limited
-by DockerHub, authenticate to DockerHub prior to invoking this action:
+In the scenario where you are using self-hosted runners and are being rate-limited by
+DockerHub (the base alpine image is from DockerHub), authenticate to DockerHub prior
+to invoking this action:
 
 ```yaml
 ...
