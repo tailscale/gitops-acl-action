@@ -102,3 +102,30 @@ Then open the secrets settings for your repo and add two secrets:
 
 Once you do that, commit the changes and push them to GitHub. You will have CI
 automatically test and push changes to your tailnet policy file to Tailscale.
+
+## Note on DockerHub Rate Limiting and Self-hosted Runners
+
+This is a `docker` GitHub action, meaning that when it is invoked, a container image
+will be built and then run.
+
+In the scenario where you are using self-hosted runners and are being rate-limited
+by DockerHub, authenticate to DockerHub prior to invoking this action:
+
+```yaml
+...
+- name: Login to Docker Hub
+  uses: docker/login-action@v2
+  with:
+    username: ${{ secrets.DOCKERHUB_USERNAME }}
+    password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+- name: Deploy ACL
+  if: github.event_name == 'push'
+  id: deploy-acl
+  uses: tailscale/gitops-acl-action@v1
+  with:
+    api-key: ${{ secrets.TS_API_KEY }}
+    tailnet: ${{ secrets.TS_TAILNET }}
+    action: apply
+...
+```
