@@ -6,7 +6,13 @@ inputs:
     required: true
   api-key:
     description: "Tailscale API key"
-    required: true
+    required: false
+  oauth-client-id:
+    description: "Tailscale OAuth ID"
+    required: false
+  oauth-secret:
+    description: "Tailscale OAuth Secret"
+    required: false
   policy-file:
     description: "Path to policy file"
     required: true
@@ -18,10 +24,10 @@ runs:
   using: "composite"
   steps:
     - name: Check Auth Info Empty
-      if: ${{ inputs.api-key == '' }}
+      if: ${{ inputs['api-key'] == '' && inputs['oauth-secret'] == '' }}
       shell: bash
       run: |
-        echo "::error title=⛔ error hint::API Key empty. Maybe you need to populate it in the Secrets for your workflow, see more in https://docs.github.com/en/actions/security-guides/encrypted-secrets"
+        echo "::error title=⛔ error hint::API Key or OAuth secret must be specified. Maybe you need to populate it in the Secrets for your workflow, see more in https://docs.github.com/en/actions/security-guides/encrypted-secrets and https://tailscale.com/s/oauth-clients"
         exit 1
     - uses: actions/setup-go@v4.0.0
       with:
@@ -29,10 +35,12 @@ runs:
     - shell: bash
       env:
         GOBIN: /usr/local/bin/
-      run: go install tailscale.com/cmd/gitops-pusher@gitops-1.30.0
+      run: go install tailscale.com/cmd/gitops-pusher@gitops-1.58.2
 
     - shell: bash
       env:
         TS_API_KEY: "${{ inputs.api-key }}"
+        TS_OAUTH_ID: "${{ inputs.oauth-client-id }}"
+        TS_OAUTH_SECRET: "${{ inputs.oauth-secret }}"
         TS_TAILNET: "${{ inputs.tailnet }}"
       run: gitops-pusher "--policy-file=${{ inputs.policy-file }}" "${{ inputs.action }}"
