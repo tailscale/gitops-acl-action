@@ -15,11 +15,18 @@ inputs:
     description: "Action to take (test/apply)"
     required: true
 runs:
-  using: "docker"
-  image: "Dockerfile"
-  env:
-    TS_API_KEY: "${{ inputs.api-key }}"
-    TS_TAILNET: "${{ inputs.tailnet }}"
-  args:
-    - "--policy-file=${{ inputs.policy-file }}"
-    - "${{ inputs.action }}"
+  using: "composite"
+  steps:
+    - uses: actions/setup-go@v4.0.0
+      with:
+        go-version: 1.21.6
+    - shell: bash
+      env:
+        GOBIN: /usr/local/bin/
+      run: go install tailscale.com/cmd/gitops-pusher@gitops-1.30.0
+
+    - shell: bash
+      env:
+        TS_API_KEY: "${{ inputs.api-key }}"
+        TS_TAILNET: "${{ inputs.tailnet }}"
+      run: gitops-pusher "--policy-file=${{ inputs.policy-file }}" "${{ inputs.action }}"
