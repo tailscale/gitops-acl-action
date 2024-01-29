@@ -17,6 +17,12 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Check Auth Info Empty
+      if: ${{ inputs.api-key == '' }}
+      shell: bash
+      run: |
+        echo "::error title=⛔ error hint::API Key empty. Maybe you need to populate it in the Secrets for your workflow, see more in https://docs.github.com/en/actions/security-guides/encrypted-secrets"
+        exit 1
     - uses: actions/setup-go@v4.0.0
       with:
         go-version: 1.21.6
