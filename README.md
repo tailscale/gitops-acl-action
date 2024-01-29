@@ -15,11 +15,19 @@ Tailscale logo in the upper left hand corner of the page.
 
 ### `api-key`
 
-**Required** An API key authorized for your tailnet. You can get one [in the
+**Optional** An API key authorized for your tailnet. You can get one [in the
 admin panel](https://login.tailscale.com/admin/settings/keys).
+Either `api-key` or `oauth-client-id` and `oauth-secret` are required.
 
 Please note that API keys will expire in 90 days. Set up a monthly event to
-rotate your Tailscale API key.
+rotate your Tailscale API key, or use an OAuth client.
+
+### `oauth-client-id` and `oauth-secret`
+
+**Optional** The ID and secret for an [OAuth client](https://tailscale.com/kb/1215/oauth-clients)
+for your tailnet. The client must have the `acl` scope.
+
+Either `api-key` or `oauth-client-id` and `oauth-secret` are required.
 
 ### `policy-file`
 
