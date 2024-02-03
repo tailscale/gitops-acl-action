@@ -29,6 +29,12 @@ runs:
       run: |
         echo "::error title=⛔ error hint::API Key or OAuth secret must be specified. Maybe you need to populate it in the Secrets for your workflow, see more in https://docs.github.com/en/actions/security-guides/encrypted-secrets and https://tailscale.com/s/oauth-clients"
         exit 1
+    - name: Check Conflicting Auth Info
+      if: ${{ inputs['api-key'] != '' && inputs['oauth-secret'] != '' }}
+      shell: bash
+      run: |
+        echo "::error title=⛔ error hint::only one of API Key or OAuth secret should be specified.
+        exit 1
     - uses: actions/setup-go@v4.0.0
       with:
         go-version: 1.21.6
@@ -37,9 +43,18 @@ runs:
         GOBIN: /usr/local/bin/
       run: go install tailscale.com/cmd/gitops-pusher@gitops-1.58.2
 
-    - shell: bash
+    - name: Gitops pusher (API Key)
+      if: ${{ inputs['api-key'] != '' }}
+      shell: bash
       env:
         TS_API_KEY: "${{ inputs.api-key }}"
+        TS_TAILNET: "${{ inputs.tailnet }}"
+      run: gitops-pusher "--policy-file=${{ inputs.policy-file }}" "${{ inputs.action }}"
+
+    - name: Gitops pusher (OAuth)
+      if: ${{ inputs['oauth-secret'] != '' }}
+      shell: bash
+      env:
         TS_OAUTH_ID: "${{ inputs.oauth-client-id }}"
         TS_OAUTH_SECRET: "${{ inputs.oauth-secret }}"
         TS_TAILNET: "${{ inputs.tailnet }}"
