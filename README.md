@@ -66,10 +66,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Fetch version-cache.json
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ./version-cache.json
           key: version-cache.json-${{ github.run_id }}

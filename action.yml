@@ -35,7 +35,7 @@ runs:
       run: |
         echo "::error title=⛔ error hint::only one of API Key or OAuth secret should be specified.
         exit 1
-    - uses: actions/setup-go@v4.0.0
+    - uses: actions/setup-go@v5.0.0
       with:
         go-version: 1.21.6
     - shell: bash
