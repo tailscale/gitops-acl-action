@@ -38,6 +38,7 @@ runs:
     - uses: actions/setup-go@v5
       with:
         go-version: 1.22.1
+        cache: false
 
     - name: Gitops pusher
       shell: bash
