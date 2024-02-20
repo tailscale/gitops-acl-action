@@ -38,6 +38,7 @@ runs:
     - uses: actions/setup-go@v4.0.0
       with:
         go-version: 1.21.6
+        cache: false
     - shell: bash
       env:
         GOBIN: /usr/local/bin/
