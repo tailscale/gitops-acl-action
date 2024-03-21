@@ -37,21 +37,15 @@ runs:
         exit 1
     - uses: actions/setup-go@v4.0.0
       with:
-        go-version: 1.21.6
+        go-version: 1.22.1
 
-    - name: Gitops pusher (API Key)
-      if: ${{ inputs['api-key'] != '' }}
+    - name: Gitops pusher
       shell: bash
       env:
-        TS_API_KEY: "${{ inputs.api-key }}"
-        TS_TAILNET: "${{ inputs.tailnet }}"
-      run: go run tailscale.com/cmd/gitops-pusher@gitops-1.58.2 "--policy-file=${{ inputs.policy-file }}" "${{ inputs.action }}"
-
-    - name: Gitops pusher (OAuth)
-      if: ${{ inputs['oauth-secret'] != '' }}
-      shell: bash
-      env:
+        # gitops-pusher will use OAUTH_ID and OAUTH_SECRET if non-empty,
+        # otherwise it will use API_KEY.
         TS_OAUTH_ID: "${{ inputs.oauth-client-id }}"
         TS_OAUTH_SECRET: "${{ inputs.oauth-secret }}"
+        TS_API_KEY: "${{ inputs.api-key }}"
         TS_TAILNET: "${{ inputs.tailnet }}"
-      run: go run tailscale.com/cmd/gitops-pusher@gitops-1.58.2 "--policy-file=${{ inputs.policy-file }}" "${{ inputs.action }}"
+      run: go run tailscale.com/cmd/gitops-pusher@v1.62.0 "--policy-file=${{ inputs.policy-file }}" "${{ inputs.action }}"
