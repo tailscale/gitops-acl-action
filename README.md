@@ -47,8 +47,11 @@ out to production.
 Set up a new GitHub repository that will contain your tailnet policy file. Open the [Access Controls page of the admin console](https://login.tailscale.com/admin/acls) and copy your policy file to
 a file in that repo called `policy.hujson`.
 
-If you want to change this name to something else, you will need to add the
-`policy-file` argument to the `with` blocks in your GitHub Actions config.
+If you want to change this name to something else, you will need to add the `policy-file` argument to the `with` blocks in your GitHub Actions config.
+
+Now implement one of the two options below:
+
+### Option A - Using OAuth (Recommended)
 
 Copy this file to `.github/workflows/tailscale.yml`.
 
@@ -66,10 +69,70 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Fetch version-cache.json
-        uses: actions/cache@v3
+        uses: actions/cache@v4
+        with:
+          path: ./version-cache.json
+          key: version-cache.json-${{ github.run_id }}
+          restore-keys: |
+            version-cache.json-
+
+      - name: Deploy ACL
+        if: github.event_name == 'push'
+        id: deploy-acl
+        uses: tailscale/gitops-acl-action@v1
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tailnet: ${{ secrets.TS_TAILNET }}
+          action: apply
+
+      - name: Test ACL
+        if: github.event_name == 'pull_request'
+        id: test-acl
+        uses: tailscale/gitops-acl-action@v1
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tailnet: ${{ secrets.TS_TAILNET }}
+          action: test
+```
+
+Generate OAuth credentials [here](https://login.tailscale.com/admin/settings/oauth).  Give it Read & Write permissions for `ACL`.
+
+Then open the secrets settings for your repo (Settings > Secrets and variables > Actions) and add two secrets:
+
+* `TS_OAUTH_CLIENT_ID`: Your OAuth Client ID from the earlier step
+* `TS_OAUTH_CLIENT_SECRET`: Your OAuth Client Secret from the earlier step
+* `TS_TAILNET`: Your tailnet's name (it's next to the logo on the upper left-hand corner of the [admin panel](https://login.tailscale.com/admin/machines))
+
+Once you do that, commit the changes and push them to GitHub. You will have CI automatically test and push changes to your tailnet policy file to Tailscale.
+
+
+### Option B - Using API key 
+
+Copy this file to `.github/workflows/tailscale.yml`.
+
+```yaml
+name: Sync Tailscale ACLs
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  acls:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch version-cache.json
+        uses: actions/cache@v4
         with:
           path: ./version-cache.json
           key: version-cache.json-${{ github.run_id }}
@@ -97,16 +160,11 @@ jobs:
 
 Generate a new API key [here](https://login.tailscale.com/admin/settings/keys).
 
-Set a monthly calendar reminder to renew this key because Tailscale does not
-currently support API key renewal (this will be updated to support that when
-that feature is implemented).
+Set a calendar reminder to renew this key because Tailscale does not support automatic API key renewal.
 
-Then open the secrets settings for your repo and add two secrets:
+Then open the secrets settings for your repo (Settings > Secrets and variables > Actions) and add two secrets:
 
 * `TS_API_KEY`: Your Tailscale API key from the earlier step
-* `TS_TAILNET`: Your tailnet's name (it's next to the logo on the upper
-  left-hand corner of the [admin
-  panel](https://login.tailscale.com/admin/machines))
+* `TS_TAILNET`: Your tailnet's name (it's next to the logo on the upper left-hand corner of the [admin panel](https://login.tailscale.com/admin/machines))
 
-Once you do that, commit the changes and push them to GitHub. You will have CI
-automatically test and push changes to your tailnet policy file to Tailscale.
+Once you do that, commit the changes and push them to GitHub. You will have CI automatically test and push changes to your tailnet policy file to Tailscale.
