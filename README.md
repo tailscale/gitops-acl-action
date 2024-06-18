@@ -110,3 +110,17 @@ Then open the secrets settings for your repo and add two secrets:
 
 Once you do that, commit the changes and push them to GitHub. You will have CI
 automatically test and push changes to your tailnet policy file to Tailscale.
+
+## Developer guide
+
+### Release process
+
+To create a new minor or patch release:
+
+- push the new tag to the main branch
+
+- create a new GitHub release with a description of the changes in this release
+
+- repush the latest major release tag to point at the new latest release.
+For example, if you are creating a `v1.3.1` release, you want to additionally tag it with `v1` tag.
+This approach follows the [official GitHub actions versioning guidelines](https://docs.github.com/en/actions/creating-actions/about-custom-actions#using-tags-for-release-management).
