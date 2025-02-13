@@ -3,7 +3,7 @@
 This GitHub action lets you manage your [tailnet policy file](https://tailscale.com/kb/1018/acls/) using a
 [GitOps](https://about.gitlab.com/topics/gitops/) workflow. With this GitHub
 action you can automatically manage your tailnet policy file using a git repository
-as your source of truth. 
+as your source of truth.
 
 ## Inputs
 
@@ -25,7 +25,10 @@ rotate your Tailscale API key, or use an OAuth client.
 ### `oauth-client-id` and `oauth-secret`
 
 **Optional** The ID and secret for an [OAuth client](https://tailscale.com/kb/1215/oauth-clients)
-for your tailnet. The client must have the `acl` scope.
+for your tailnet. The client must have the `devices:core:read`,
+`devices:posture_attributes:read` and `policy_file:read` scopes to test and the
+`devices:core:read`, `devices:posture_attributes` and `policy_file` scopes to
+apply.
 
 Either `api-key` or `oauth-client-id` and `oauth-secret` are required.
 
