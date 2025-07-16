@@ -1,0 +1,134 @@
+name: Build and Release gitops-pusher
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      gitops_pusher_commit:
+        description: 'Tailscale gitops-pusher commit hash'
+        required: true
+        default: '66aa77416744037baec93206ae212012a2314f83'
+      tag_name:
+        description: 'Release tag name'
+        required: true
+        default: 'v1.0.0'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [linux, darwin, windows]
+        goarch: [amd64, arm64]
+        exclude:
+          - goos: windows
+            goarch: arm64
+    
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.22.4
+
+      - name: Set commit hash
+        id: commit
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "hash=${{ github.event.inputs.gitops_pusher_commit }}" >> $GITHUB_OUTPUT
+          else
+            echo "hash=66aa77416744037baec93206ae212012a2314f83" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+        run: |
+          COMMIT_HASH="${{ steps.commit.outputs.hash }}"
+          BINARY_NAME="gitops-pusher-${{ matrix.goos }}-${{ matrix.goarch }}"
+          
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            BINARY_NAME="${BINARY_NAME}.exe"
+          fi
+          
+          echo "Building for ${{ matrix.goos }}/${{ matrix.goarch }}"
+          go build -o "${BINARY_NAME}" \
+            -ldflags="-s -w" \
+            "tailscale.com/cmd/gitops-pusher@${COMMIT_HASH}"
+          
+          # Make executable (for non-Windows)
+          if [ "${{ matrix.goos }}" != "windows" ]; then
+            chmod +x "${BINARY_NAME}"
+          fi
+          
+          echo "BINARY_NAME=${BINARY_NAME}" >> $GITHUB_ENV
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.BINARY_NAME }}
+          path: ${{ env.BINARY_NAME }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./binaries
+
+      - name: Set release tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.tag_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create checksums
+        run: |
+          cd binaries
+          find . -type f -name "gitops-pusher-*" -exec sha256sum {} \; > ../checksums.txt
+          cd ..
+          echo "Checksums created:"
+          cat checksums.txt
+
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: gitops-pusher ${{ steps.tag.outputs.tag }}
+          body: |
+            ## gitops-pusher Binary Release
+            
+            Pre-compiled binaries for Tailscale's gitops-pusher tool.
+            
+            **Commit:** ${{ steps.commit.outputs.hash || '66aa77416744037baec93206ae212012a2314f83' }}
+            
+            ### Usage
+            Download the appropriate binary for your platform and use it in your workflows:
+            
+            ```yaml
+            - name: Download gitops-pusher
+              run: |
+                wget https://github.com/${{ github.repository }}/releases/download/${{ steps.tag.outputs.tag }}/gitops-pusher-linux-amd64
+                chmod +x gitops-pusher-linux-amd64
+                ./gitops-pusher-linux-amd64 --policy-file=policy.hujson test
+            ```
+            
+            ### Checksums
+            See `checksums.txt` for file verification.
+          files: |
+            binaries/*/gitops-pusher-*
+            checksums.txt
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

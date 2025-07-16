@@ -20,6 +20,10 @@ inputs:
   action:
     description: "Action to take (test/apply)"
     required: true
+  gitops-pusher-version:
+    description: "Version of gitops-pusher to use"
+    required: false
+    default: "latest"
 runs:
   using: "composite"
   steps:
@@ -33,14 +37,17 @@ runs:
       if: ${{ inputs['api-key'] != '' && inputs['oauth-secret'] != '' }}
       shell: bash
       run: |
-        echo "::error title=⛔ error hint::only one of API Key or OAuth secret should be specified.
+        echo "::error title=⛔ error hint::only one of API Key or OAuth secret should be specified."
         exit 1
-    - uses: actions/setup-go@v5
+    - name: Install gitops-pusher
+      uses: jaxxstorm/action-install-gh-release@v1.12.0
       with:
-        go-version: 1.22.4
-        cache: false
-
-    - name: Gitops pusher
+        repo: ${{ github.repository }}
+        tag: ${{ inputs.gitops-pusher-version }}
+        binaries-location: binaries
+        rename-to: gitops-pusher
+        chmod: 0755
+    - name: Run gitops-pusher
       shell: bash
       env:
         # gitops-pusher will use OAUTH_ID and OAUTH_SECRET if non-empty,
@@ -49,4 +56,4 @@ runs:
         TS_OAUTH_SECRET: "${{ inputs.oauth-secret }}"
         TS_API_KEY: "${{ inputs.api-key }}"
         TS_TAILNET: "${{ inputs.tailnet }}"
-      run: go run tailscale.com/cmd/gitops-pusher@66aa77416744037baec93206ae212012a2314f83 "--policy-file=${{ inputs.policy-file }}" "${{ inputs.action }}"
+      run: gitops-pusher "--policy-file=${{ inputs.policy-file }}" "${{ inputs.action }}"
