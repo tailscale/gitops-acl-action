@@ -11,7 +11,7 @@ as your source of truth.
 
 **Required** The name of your tailnet. You can find it by opening [the admin
 panel](https://login.tailscale.com/admin) and copying down the name next to the
-Tailscale logo in the upper left hand corner of the page.
+Tailscale logo in the upper left hand corner of the page. Or you can use a `-` to default to the Tailnet your key belongs to
 
 ### `api-key`
 
@@ -41,6 +41,10 @@ ACL tests and not update the ACLs in Tailscale. If you set `apply`, the action
 will run ACL tests and then update the ACLs in Tailscale. This enables you to
 use pull requests to make changes with CI stopping you from pushing a bad change
 out to production.
+
+### `version`
+**Optional** The version of the `gitops-pusher` command to run. Defaults to the latest
+stable version. You may also specify a commit hash such as `0a59ccf01577d6aa656ec8e8a133ec63f73bfec2` or a Tailscale version such as `v1.88.0`
 
 ## Getting Started
 

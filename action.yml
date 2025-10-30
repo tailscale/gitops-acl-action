@@ -20,6 +20,9 @@ inputs:
   action:
     description: "Action to take (test/apply)"
     required: true
+  version:
+    description: Gitops Pusher version
+    default: stable
 runs:
   using: "composite"
   steps:
@@ -35,10 +38,36 @@ runs:
       run: |
         echo "::error title=⛔ error hint::only one of API Key or OAuth secret should be specified.
         exit 1
-    - uses: actions/setup-go@v5
+
+    - name: Get version
+      if: inputs.version == 'stable'
+      shell: bash
+      run: |
+        version=$(curl -H 'user-agent:action-gitops-pusher' -s https://pkgs.tailscale.com/${{ inputs.version }}/?mode=json | jq -r '.Version')
+        echo "TAILSCALE_VERSION=v$version" >> "$GITHUB_ENV"
+
+    - if: inputs.version != 'stable'
+      shell: bash
+      run: echo 'TAILSCALE_VERSION=${{ inputs.version }}' >> "$GITHUB_ENV"
+
+    - uses: actions/cache@v4
+      id: cache-gitops-pusher
       with:
-        go-version: 1.22.4
+        path: ${{ runner.temp }}/gitops-pusher
+        key: ${{ env.TAILSCALE_VERSION }}
+
+    - uses: actions/setup-go@v6
+      if: steps.cache-gitops-pusher.outputs.cache-hit != 'true'
+      with:
+        go-version: 1.25
         cache: false
+
+    - name: Install pusher
+      if: steps.cache-gitops-pusher.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        GOBIN: ${{ runner.temp }}
+      run: go install tailscale.com/cmd/gitops-pusher@$TAILSCALE_VERSION
 
     - name: Gitops pusher
       shell: bash
@@ -49,4 +78,4 @@ runs:
         TS_OAUTH_SECRET: "${{ inputs.oauth-secret }}"
         TS_API_KEY: "${{ inputs.api-key }}"
         TS_TAILNET: "${{ inputs.tailnet }}"
-      run: go run tailscale.com/cmd/gitops-pusher@66aa77416744037baec93206ae212012a2314f83 "--policy-file=${{ inputs.policy-file }}" "${{ inputs.action }}"
+      run: ${{ runner.temp }}/gitops-pusher --policy-file=${{ inputs.policy-file }} ${{ inputs.action }}
