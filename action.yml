@@ -4,7 +4,6 @@ inputs:
   tailnet:
     description: "Tailnet name (eg. example.com, xe.github, tailscale.org.github)"
     required: true
-    default: "-"
   api-key:
     description: "Tailscale API key"
     required: false
