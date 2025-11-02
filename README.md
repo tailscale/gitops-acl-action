@@ -13,19 +13,10 @@ as your source of truth.
 panel](https://login.tailscale.com/admin) and copying down the name next to the
 Tailscale logo in the upper left hand corner of the page.
 
-### `api-key`
+### `oidc-client-id` and `oidc-audience`
 
-**Optional** An API key authorized for your tailnet. You can get one [in the
-admin panel](https://login.tailscale.com/admin/settings/keys).
-Either `api-key` or `oauth-client-id` and `oauth-secret` are required.
-
-Please note that API keys will expire in 90 days. Set up a monthly event to
-rotate your Tailscale API key, or use an OAuth client.
-
-### `oauth-client-id` and `oauth-secret`
-
-**Optional** The ID and secret for an [OAuth client](https://tailscale.com/kb/1215/oauth-clients)
-for your tailnet. The client must have the `acl` scope.
+**Required** The OIDC client ID and audience for an [OIDC Credential](https://tailscale.com/kb/1581/workload-identity-federation#configure-federated-identities-in-the-admin-console)
+for your tailnet. The credential must have the `policy_file` scope.
 
 Either `api-key` or `oauth-client-id` and `oauth-secret` are required.
 
@@ -44,7 +35,7 @@ out to production.
 
 ## Getting Started
 
-Set up a new GitHub repository that will contain your tailnet policy file. Open the [Access Controls page of the admin console](https://login.tailscale.com/admin/acls) and copy your policy file to
+Set up a new GitHub repository that will contain your tailnet policy file. Open the [Access Controls page of the admin console](https://login.tailscale.com/admin/acls/file) and copy your policy file to
 a file in that repo called `policy.hujson`.
 
 If you want to change this name to something else, you will need to add the
@@ -63,10 +54,13 @@ on:
 
 jobs:
   acls:
+    permissions:
+      contents: read
+      id-token: write # required for generating an OIDC token
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Fetch version-cache.json
         uses: actions/cache@v4
@@ -81,7 +75,8 @@ jobs:
         id: deploy-acl
         uses: tailscale/gitops-acl-action@v1
         with:
-          api-key: ${{ secrets.TS_API_KEY }}
+          oidc-client-id: ${{ secrets.TS_OIDC_CLIENT_ID }}
+          oidc-audience: ${{ secrets.TS_OIDC_AUDIENCE }}
           tailnet: ${{ secrets.TS_TAILNET }}
           action: apply
 
@@ -90,23 +85,23 @@ jobs:
         id: test-acl
         uses: tailscale/gitops-acl-action@v1
         with:
-          api-key: ${{ secrets.TS_API_KEY }}
+          oidc-client-id: ${{ secrets.TS_OIDC_CLIENT_ID }}
+          oidc-audience: ${{ secrets.TS_OIDC_AUDIENCE }}
           tailnet: ${{ secrets.TS_TAILNET }}
           action: test
 ```
 
-Generate a new API key [here](https://login.tailscale.com/admin/settings/keys).
+Generate a new credential via [Trust Credentials](https://login.tailscale.com/admin/settings/trust-credentials):
 
-Set a monthly calendar reminder to renew this key because Tailscale does not
-currently support API key renewal (this will be updated to support that when
-that feature is implemented).
+Choose an *OpenID Connect* credential, and set the *Issuer* as `Github`. The Subject should be `repo:<your_org>/<your_repo>:<environment>:*`. ([refer to Github's documentation on the `sub` field](https://docs.github.com/en/actions/reference/security/oidc#example-subject-claims).)
 
-Then open the secrets settings for your repo and add two secrets:
+In the *Scopes* step, choose **Policy File: Write** (or *Read* if not using the `apply` action.)
 
-* `TS_API_KEY`: Your Tailscale API key from the earlier step
-* `TS_TAILNET`: Your tailnet's name (it's next to the logo on the upper
-  left-hand corner of the [admin
-  panel](https://login.tailscale.com/admin/machines))
+Then open the secrets settings for your repo and add three secrets:
+
+* `TS_OIDC_CLIENT_ID`: Your Tailscale OIDC Client ID from the earlier step
+* `TS_OIDC_AUDIENCE`: Your Tailscale OIDC Audience from the earlier step
+* `TS_TAILNET`: Your tailnet's ID/name (it's available on the [admin panel Settings](https://login.tailscale.com/admin/settings/general))
 
 Once you do that, commit the changes and push them to GitHub. You will have CI
 automatically test and push changes to your tailnet policy file to Tailscale.

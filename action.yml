@@ -2,17 +2,14 @@ name: "Sync Tailscale ACLs"
 description: "Push changes to Tailscale and run ACL tests in CI"
 inputs:
   tailnet:
-    description: "Tailnet name (eg. example.com, xe.github, tailscale.org.github)"
+    description: "Tailnet ID or Name (eg. TCZrp4oabE12CNTRL, example.com, xe.github, tailscale.org.github)"
     required: true
-  api-key:
-    description: "Tailscale API key"
-    required: false
-  oauth-client-id:
-    description: "Tailscale OAuth ID"
-    required: false
-  oauth-secret:
-    description: "Tailscale OAuth Secret"
-    required: false
+  oidc-client-id:
+    description: "Tailscale OIDC Client ID"
+    required: true
+  oidc-audience:
+    description: "Tailscale OIDC Audience"
+    required: true
   policy-file:
     description: "Path to policy file"
     required: true
@@ -23,18 +20,26 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Check Auth Info Empty
-      if: ${{ inputs['api-key'] == '' && inputs['oauth-secret'] == '' }}
+    - name: Generate OIDC JWT from Github Actions
+      id: get_gh_oidc_token
       shell: bash
       run: |
-        echo "::error title=⛔ error hint::API Key or OAuth secret must be specified. Maybe you need to populate it in the Secrets for your workflow, see more in https://docs.github.com/en/actions/security-guides/encrypted-secrets and https://tailscale.com/s/oauth-clients"
-        exit 1
-    - name: Check Conflicting Auth Info
-      if: ${{ inputs['api-key'] != '' && inputs['oauth-secret'] != '' }}
+        OIDC_JWT=$(curl -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=${{ inputs.oidc-audience }}" | jq -r '.value')
+        echo "::add-mask::$OIDC_JWT"
+        echo "jwt=$OIDC_JWT" >> $GITHUB_OUTPUT
+
+    - name: Exchange OIDC JWT with a short-lived Tailscale API Key
+      id: tailscale_api_key
       shell: bash
       run: |
-        echo "::error title=⛔ error hint::only one of API Key or OAuth secret should be specified.
-        exit 1
+        RESPONSE=$(curl -X POST https://api.tailscale.com/api/v2/oauth/token-exchange \
+          -H "Content-Type: application/x-www-form-urlencoded" \
+          -d "client_id=${{ inputs.oidc-client-id }}" \
+          -d "jwt=${{ steps.get_gh_oidc_token.outputs.jwt }}")
+        export ACCESS_TOKEN=$(echo $RESPONSE | jq -r '.access_token')
+        echo "::add-mask::$ACCESS_TOKEN"
+        echo "access_token=$ACCESS_TOKEN" >> $GITHUB_OUTPUT
+    
     - uses: actions/setup-go@v5
       with:
         go-version: 1.22.4
@@ -43,10 +48,6 @@ runs:
     - name: Gitops pusher
       shell: bash
       env:
-        # gitops-pusher will use OAUTH_ID and OAUTH_SECRET if non-empty,
-        # otherwise it will use API_KEY.
-        TS_OAUTH_ID: "${{ inputs.oauth-client-id }}"
-        TS_OAUTH_SECRET: "${{ inputs.oauth-secret }}"
-        TS_API_KEY: "${{ inputs.api-key }}"
+        TS_API_KEY: "${{ steps.tailscale_api_key.outputs.access_token }}"
         TS_TAILNET: "${{ inputs.tailnet }}"
       run: go run tailscale.com/cmd/gitops-pusher@66aa77416744037baec93206ae212012a2314f83 "--policy-file=${{ inputs.policy-file }}" "${{ inputs.action }}"
