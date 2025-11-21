@@ -52,6 +52,10 @@ If you want to change this name to something else, you will need to add the
 
 Copy this file to `.github/workflows/tailscale.yml`.
 
+**Security Note:** For best security practices, pin all GitHub Actions to specific commit SHAs rather than tags. See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+> **Note:** The example below shows pinned versions as of the last documentation update. While Dependabot automatically updates action references in `action.yml` and workflow files, it does not update examples in README files. For the latest pinned versions, check the [releases page](https://github.com/tailscale/gitops-acl-action/releases) or see the actual `action.yml` file.
+
 ```yaml
 name: Sync Tailscale ACLs
 
@@ -66,10 +70,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Fetch version-cache.json
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ./version-cache.json
           key: version-cache.json-${{ github.run_id }}
@@ -79,7 +83,7 @@ jobs:
       - name: Deploy ACL
         if: github.event_name == 'push'
         id: deploy-acl
-        uses: tailscale/gitops-acl-action@v1
+        uses: tailscale/gitops-acl-action@90d41601ba36b946cf4946ef5a72bf6e16bae14b # v1.3.1
         with:
           api-key: ${{ secrets.TS_API_KEY }}
           tailnet: ${{ secrets.TS_TAILNET }}
@@ -88,7 +92,7 @@ jobs:
       - name: Test ACL
         if: github.event_name == 'pull_request'
         id: test-acl
-        uses: tailscale/gitops-acl-action@v1
+        uses: tailscale/gitops-acl-action@90d41601ba36b946cf4946ef5a72bf6e16bae14b # v1.3.1
         with:
           api-key: ${{ secrets.TS_API_KEY }}
           tailnet: ${{ secrets.TS_TAILNET }}
