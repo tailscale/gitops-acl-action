@@ -54,7 +54,7 @@ Copy this file to `.github/workflows/tailscale.yml`.
 
 **Security Note:** For best security practices, pin all GitHub Actions to specific commit SHAs rather than tags. See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
-> **Note:** The example below shows pinned versions as of the last documentation update. While Dependabot automatically updates action references in `action.yml` and workflow files, it does not update examples in README files. For the latest pinned versions, check the [releases page](https://github.com/tailscale/gitops-acl-action/releases) or see the actual `action.yml` file.
+> **Note:** The example below shows pinned versions as of the last documentation update. While Dependabot automatically updates action references in `action.yml` and workflow files, it does not update examples in README files. For the latest pinned version of `tailscale/gitops-acl-action`, check the [releases page](https://github.com/tailscale/gitops-acl-action/releases) or see the actual `action.yml` file. For third-party actions such as `actions/checkout` and `actions/cache`, please check their respective repositories or releases pages for the most up-to-date pinned versions.
 
 ```yaml
 name: Sync Tailscale ACLs
