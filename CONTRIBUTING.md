@@ -59,7 +59,7 @@ When adding a new GitHub Action to a workflow or composite action:
 Example:
 ```yaml
 # Get the commit SHA for a tag
-git ls-remote https://github.com/actions/checkout v4
+git ls-remote https://github.com/actions/checkout v4.1.1
 # Use the resulting SHA in your workflow
 - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 ```
