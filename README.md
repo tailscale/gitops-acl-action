@@ -25,7 +25,7 @@ rotate your Tailscale API key, or use an OAuth client.
 ### `oauth-client-id` and `oauth-secret`
 
 **Optional** The ID and secret for an [OAuth client](https://tailscale.com/kb/1215/oauth-clients)
-for your tailnet. The client must have the `acl` scope.
+for your tailnet. The client must have the `policy_file` scope.
 
 Either `api-key` or `oauth-client-id` and `oauth-secret` are required.
 
