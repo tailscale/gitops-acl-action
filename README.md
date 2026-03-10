@@ -107,7 +107,7 @@ jobs:
           action: test
 ```
 
-Generate a new federated identity. See [here](https://login.tailscale.com/admin/settings/keys) for instructions.
+Generate a new federated identity. See [here](https://tailscale.com/docs/integrations/github/github-action) for instructions.
 
 Then open the secrets settings for your repo and add two secrets:
 
