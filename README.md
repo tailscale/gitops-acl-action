@@ -70,6 +70,8 @@ on:
 
 jobs:
   acls:
+    if: github.event_name == 'push'
+    environment: production
     permissions:
       contents: read
       id-token: write # This is required for the Tailscale action to request a JWT from GitHub
@@ -87,7 +89,6 @@ jobs:
             version-cache.json-
 
       - name: Deploy ACL
-        if: github.event_name == 'push'
         id: deploy-acl
         uses: tailscale/gitops-acl-action@v1
         with:
@@ -96,25 +97,53 @@ jobs:
           tailnet: ${{ secrets.TS_TAILNET }}
           action: apply
 
+  acls-test:
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      id-token: write # This is required for the Tailscale action to request a JWT from GitHub
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Fetch version-cache.json
+        uses: actions/cache@v5
+        with:
+          path: ./version-cache.json
+          key: version-cache.json-${{ github.run_id }}
+          restore-keys: |
+            version-cache.json-
+
       - name: Test ACL
-        if: github.event_name == 'pull_request'
         id: test-acl
         uses: tailscale/gitops-acl-action@v1
         with:
-          oauth-client-id: ${{ secrets.TS_OAUTH_ID }}
-          audience: ${{ secrets.TS_AUDIENCE }}
+          oauth-client-id: ${{ secrets.TS_OAUTH_ID_RO }}
+          audience: ${{ secrets.TS_AUDIENCE_RO }}
           tailnet: ${{ secrets.TS_TAILNET }}
           action: test
 ```
 
-Generate a new federated identity. See [here](https://login.tailscale.com/admin/settings/keys) for instructions.
+Generate two OpenID Connect federated identities in the Tailscale admin panel under
+[Settings → Trust credentials](https://login.tailscale.com/admin/settings/trust-credentials/add):
+one with **Policy File - Read** permission for the test job, and one with
+**Policy File - Write** permission for the apply job.
 
-Then open the secrets settings for your repo and add two secrets:
+Open the secrets settings for your repo and add three repository secrets:
 
-* `TS_OAUTH_ID`: Your federated identity's client ID
-* `TS_AUDIENCE`: Your federated identity's audience
+* `TS_OAUTH_ID_RO`: Client ID of the read-only (test) federated identity
+* `TS_AUDIENCE_RO`: Audience of the read-only (test) federated identity
 * `TS_TAILNET`: Your tailnet's name (it's next to the logo on the upper
   left-hand corner of the [admin panel](https://login.tailscale.com/admin/machines))
+
+Create a GitHub [environment](https://docs.github.com/en/actions/deployment/targeting-different-deployment-environments/using-environments-for-deployment)
+named `production`, and restrict it to the `main` branch under "Deployment branch and tag policies".
+Without this restriction the apply job's credentials can be accessed from a pull request branch.
+Add two environment secrets:
+
+* `TS_OAUTH_ID`: Client ID of the apply federated identity
+* `TS_AUDIENCE`: Audience of the apply federated identity
 
 Once you do that, commit the changes and push them to GitHub. You will have CI
 automatically test and push changes to your tailnet policy file to Tailscale.
