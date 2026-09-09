@@ -109,11 +109,11 @@ jobs:
 
 Generate a new federated identity. See [here](https://login.tailscale.com/admin/settings/keys) for instructions.
 
-Then open the secrets settings for your repo and add two secrets:
+Then open the secrets settings for your repo and add three secrets:
 
 * `TS_OAUTH_ID`: Your federated identity's client ID
 * `TS_AUDIENCE`: Your federated identity's audience
-* `TS_TAILNET`: Your tailnet's name (it's next to the logo on the upper
+* `TS_TAILNET`: Your tailnet's name (Defaults to the repo name.  You can find it next to the logo on the upper
   left-hand corner of the [admin panel](https://login.tailscale.com/admin/machines))
 
 Once you do that, commit the changes and push them to GitHub. You will have CI
