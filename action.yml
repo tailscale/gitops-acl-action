@@ -30,7 +30,7 @@ runs:
       if: ${{ inputs['api-key'] == '' && inputs['oauth-secret'] == '' && inputs['oauth-client-id'] == ''}}
       shell: bash
       run: |
-        echo "::error title=⛔ error hint::API Key, OAuth secret, or OAuth client ID and audience must be specified. Maybe you need to populate it in the Secrets for your workflow, see more in https://docs.github.com/en/actions/security-guides/encrypted-secrets and https://tailscale.com/s/trust-credentials
+        echo "::error title=⛔ error hint::API Key, OAuth secret, or OAuth client ID and audience must be specified. Maybe you need to populate it in the Secrets for your workflow, see more in https://docs.github.com/en/actions/security-guides/encrypted-secrets and https://tailscale.com/s/trust-credentials"
         exit 1
     - name: Check Conflicting Auth Info
       if: ${{ (inputs['api-key'] != '' && (inputs['oauth-secret'] != '' || inputs['audience'] != '')) || (inputs['oauth-secret'] != '' && (inputs['api-key'] != '' || inputs['audience'] != '')) || (inputs['audience'] != '' && (inputs['api-key'] != '' || inputs['oauth-secret'] != '')) }}
