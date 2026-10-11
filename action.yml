@@ -48,7 +48,7 @@ runs:
       id: fetch-id-token
       run: |
         ID_TOKEN=$(curl -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=${{ inputs.audience }}" | jq -r '.value')
-        echo "::add-mask::ID_TOKEN"
+        echo "::add-mask::$ID_TOKEN"
         echo "id_token=$ID_TOKEN" >> $GITHUB_OUTPUT
     - name: Gitops pusher
       shell: bash
